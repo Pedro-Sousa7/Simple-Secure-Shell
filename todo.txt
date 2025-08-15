@@ -1,0 +1,3 @@
+In connection.rs and other connecting files:
+- Function which reads all response
+- reading time outs
