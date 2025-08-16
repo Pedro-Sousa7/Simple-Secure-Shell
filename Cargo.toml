@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-num-bigint = { version = "0.4", features = ["rand"] }
+num-bigint = { version = "0.4", features = ["rand","serde"] }
 num-traits = "0.2"
 rand = "0.8"
+bincode = "1.3"
+serde = { version = "1.0.219", features = ["derive"] }
 rsa = { version="0.9.8", features=["sha2"]}

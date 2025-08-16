@@ -1,5 +1,6 @@
 use num_bigint::BigUint;
 use num_traits::{Zero};
+use serde::Serialize;
 use crate::crypto;
 use crate::error::{Error, Result};
 /*
@@ -34,7 +35,8 @@ const PRIVATE_KEY_SIZE: u64 = 512;
 const INVALID_PUBLIC_KEY_ERROR: &'static str = "Received Invalid Public Key";
 
 //Keys and values that are exchanged
-struct ExchangedKeys {
+#[derive(Serialize)]
+pub struct ExchangedKeys {
     public_key : BigUint,
     prime : BigUint,
     generator: BigUint
@@ -103,4 +105,3 @@ impl ExchangedKeys{
        Self {public_key,prime,generator}
     } 
 }
-

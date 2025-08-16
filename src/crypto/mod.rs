@@ -3,9 +3,7 @@ use num_bigint::RandBigInt;
 use num_traits::{Num, One};
 use rand::seq::SliceRandom;
 use rand::distributions::{Alphanumeric,DistString};
-use ::rsa::pkcs1::DecodeRsaPublicKey;
-use ::rsa::RsaPublicKey;
-
+use crate::crypto::dhkeys::DHKeys;
 use crate::error::Result;
 
 use crate::crypto::rsa::RSAKeys;
@@ -13,7 +11,7 @@ use crate::crypto::dhprimes::GROUPS;
 
 mod dhprimes;
 mod rsa;
-mod dhkeys;
+pub mod dhkeys;
 /*
  *###############################################
  * File responsible for number generation,
@@ -27,6 +25,10 @@ pub const HEX_RADIX: u32 = 16;
 //Generates a int with a size
 pub fn generate_random_int(size: u64) -> BigUint {
     rand::thread_rng().gen_biguint(size)
+}
+
+pub fn generate_dhkeys() -> DHKeys{
+    DHKeys::new()
 }
 
 //Chooses a random pre-computed prime number
