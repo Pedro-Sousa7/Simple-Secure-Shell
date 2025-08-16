@@ -1,5 +1,0 @@
-In connection.rs and other connecting files:
-- Function which reads all response
-- reading time outs
-
-- Calculate the hash :) (RFC 4253 section 8)
