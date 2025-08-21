@@ -4,6 +4,7 @@ use num_traits::{Num, One};
 use rand::seq::SliceRandom;
 use rand::distributions::{Alphanumeric,DistString};
 use crate::crypto::dhkeys::DHKeys;
+use crate::crypto::session_keys::SessionKeys;
 use crate::error::Result;
 
 use crate::crypto::rsa::RSAKeys;
@@ -12,6 +13,7 @@ use crate::crypto::dhprimes::GROUPS;
 mod dhprimes;
 mod rsa;
 pub mod dhkeys;
+pub mod session_keys;
 /*
  *###############################################
  * File responsible for number generation,
@@ -65,6 +67,9 @@ pub fn generate_random_string(size: usize) -> String{
 }
 
 pub fn is_valid_signature_sha256(public_pem: &str, bytes: &[u8], signature: &[u8]) -> Result<()>{
-
     RSAKeys::is_valid_signature_sha256(public_pem, bytes, signature)
+}
+
+pub fn generate_session_keys(session_hash: &Vec<u8>, shared_key : BigUint) -> SessionKeys{
+    SessionKeys::new(session_hash, shared_key)
 }

@@ -12,7 +12,7 @@ use num_bigint::BigUint;
 
 use crate::crypto::dhkeys::DHKeys;
 use crate::error::Result;
-use crate::session::protocol;
+use crate::session::{protocol, utils};
 
 pub fn handle_dh_keys_exchange(stream : &mut TcpStream) -> Result<BigUint>{
 
@@ -45,17 +45,9 @@ fn send_keys(stream : &mut TcpStream,keys: &DHKeys) -> Result<()>{
 fn receive_public_key(stream :&mut TcpStream) -> Result<BigUint>{
 
 
-    //Reads the public key size
-    let mut len_buf = [0u8; 4];
-    stream.read_exact(&mut len_buf)?;
+    let key_data = utils::read_from_tcp(stream)?;
 
-    let len = u32::from_be_bytes(len_buf) as usize;
-    
-    //Reads the key
-    let mut data = vec![0u8; len];
-    stream.read_exact(&mut data)?;
-
-    Ok(BigUint::from_bytes_be(&data)) 
+    Ok(BigUint::from_bytes_be(&key_data)) 
 
 
 

@@ -1,5 +1,5 @@
 use std::{io::{Read, Write}, net::{Ipv4Addr, SocketAddrV4, TcpStream}};
-use crate::{crypto, file_sys, session::protocol};
+use crate::{crypto, file_sys, session::{protocol, utils}};
 use crate::error::{Result, Error};
 use std::str;
 
@@ -23,12 +23,6 @@ pub fn handle_public_key_verification(socket: &SocketAddrV4, stream: &mut TcpStr
     Ok(())
 }
 
-// reads exactly N bytes from the stream
-fn read_exact_n(stream: &mut TcpStream, n: usize) -> Result<Vec<u8>> {
-    let mut buf = vec![0u8; n];
-    stream.read_exact(&mut buf)?;
-    Ok(buf)
-}
 
 // asks the other machine for their public key, for comparing
 fn ask_public_key(stream: &mut TcpStream) -> Result<String> {
@@ -36,13 +30,7 @@ fn ask_public_key(stream: &mut TcpStream) -> Result<String> {
     let byte = protocol::SsshMessages::PublicKey as u8;
     stream.write_all(&[byte])?;
 
-    // first read the size (1 byte)
-    let mut size_buf = [0u8; 1];
-    stream.read_exact(&mut size_buf)?;
-    let size = size_buf[0] as usize;
-
-    // then read the payload with that size
-    let buffer = read_exact_n(stream, size)?;
+    let buffer = utils::read_from_tcp(stream)?;
 
     match str::from_utf8(&buffer) {
         Ok(public_key_pem) => Ok(public_key_pem.trim().to_string()),
@@ -63,13 +51,8 @@ fn verify_server_private_key_with_challenge(stream: &mut TcpStream, public_key_p
     stream.write_all(&[byte])?;
     stream.write_all(random_str)?;
 
-    // first read size (1 byte)
-    let mut size_buf = [0u8; 1];
-    stream.read_exact(&mut size_buf)?;
-    let size = size_buf[0] as usize;
-
     // then read the signature
-    let buffer = read_exact_n(stream, size)?;
+    let buffer = utils::read_from_tcp(stream)?;
     let signature = &buffer[..];
 
     crypto::is_valid_signature_sha256(public_key_pem, random_str, signature)
@@ -83,14 +66,7 @@ pub fn send_and_verify_signed_message(stream: &mut TcpStream,public_key_pem: &st
     stream.write_all(&(msg_bytes.len() as u8).to_be_bytes())?; // send size first
     stream.write_all(msg_bytes)?;
 
-    // Receive size of signature
-    let mut size_buf = [0u8; 1];
-    stream.read_exact(&mut size_buf)?;
-    let sig_size = size_buf[0] as usize;
-
-    // Receive the signature
-    let mut sig_buf = vec![0u8; sig_size];
-    stream.read_exact(&mut sig_buf)?;
+    let sig_buf = utils::read_from_tcp(stream)?;
 
     // Validate the signature with the provided public key
     crypto::is_valid_signature_sha256(public_key_pem, msg_bytes, &sig_buf)

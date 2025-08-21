@@ -35,3 +35,12 @@ pub enum SsshMessages {
     AuthFailure = 5,
     End = 6,
 }
+
+
+pub const CLIENT_SERVER_ENCRYPTION_BYTE : u8= b'A';
+pub const SERVER_CLIENT_ENCRYPTION_BYTE : u8 = b'B';
+pub const CLIENT_SERVER_INTEGRITY_BYTE : u8 = b'C';
+pub const SERVER_CLIENT_INTEGIRTY_BYTE : u8 = b'D';
+
+
+

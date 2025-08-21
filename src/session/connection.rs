@@ -10,7 +10,7 @@ use std::{io::{Read, Write}, net::{SocketAddrV4, TcpStream}};
 
 use num_bigint::BigUint;
 
-use crate::session::{challenge, dhkeys, protocol};
+use crate::session::{challenge, dhkeys, protocol, utils};
 use crate::error::{Result,Error};
 
 const CONNECTION_ERROR : &str = "Cannot connect to the given address and port";
@@ -44,12 +44,10 @@ fn verify_port(socket: &SocketAddrV4) -> Result<TcpStream>{
         let banner_as_bytes = protocol::PROTOCOL_BANNER.as_bytes();
         let _ = stream.write_all(banner_as_bytes); //Sends the banner as bytes
         
-        let mut buffer = [0u8;protocol::BUFFER_MAX_SIZE]; //For reading the response
-
-        let size = stream.read(&mut buffer)?;
+        let buffer = utils::read_from_tcp(&mut stream)?;
 
         //Verifies if the banners match
-        if buffer[..size].trim_ascii() != banner_as_bytes{
+        if buffer[..].trim_ascii() != banner_as_bytes{
             return Err(Error::Static(PROTOCOL_ERROR));
         }
 

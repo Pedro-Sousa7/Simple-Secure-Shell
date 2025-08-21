@@ -1,7 +1,7 @@
 use std::fmt::format;
 use std::net::{SocketAddr, SocketAddrV4};
 
-mod protocol;
+pub mod protocol;
 mod utils;
 mod connection;
 mod challenge;
@@ -10,9 +10,10 @@ mod dhkeys;
 use num_bigint::BigUint;
 use rsa::sha2::{Digest, Sha256};
 
+use crate::crypto::session_keys::SessionKeys;
 use crate::error::Result;
 use crate::crypto::dhkeys::DHKeys;
-use crate::file_sys;
+use crate::{crypto, file_sys};
 /*
  *#########################################################
  *File responsible for the SSSH Session, where
@@ -27,10 +28,7 @@ use crate::file_sys;
  * H = HASH(shared key || Server public key || user)
  *
  * Now we may derive all necessary keys.
- * We may use a key for the HMAC and one for the message
- *
- * HMAC_KEY = HASH( H || K || "B")
- * ENC_KEY = HASH(H || K || "A")
+ * We may use a key for the HMAC and one for the message    
  * 
  * HMAC = MAC(key, sequence number || uncrypted packet)
  *
@@ -41,8 +39,9 @@ use crate::file_sys;
 pub struct Session{
     user : String,
     socket : SocketAddr,
-    hash : String,
-    dhkeys : DHKeys,
+    session_hash : Vec<u8>,
+    keys : SessionKeys,
+    sequence_number : usize,
 }
 
 impl Session {
@@ -63,12 +62,16 @@ impl Session {
 
         let (stream,shared_key) = connection::start_connection(&_socket)?;
 
-        let hash = Session::compute_hash(&shared_key,&_user);
+        let session_hash: Vec<u8> = Session::compute_session_hash(&shared_key,&_user, &_socket)?;
+
+        let keys : SessionKeys = crypto::generate_session_keys(&session_hash, shared_key);
 
         Ok(())
     }
 
-    fn compute_hash(shared_key : &BigUint,  user : &str) -> Result<String>{
+    fn compute_session_hash(shared_key : &BigUint,  user : &str, socket : &SocketAddrV4) -> Result<Vec<u8>>{
+
+        let address = *socket.ip();
         
         let public_key_pem = match file_sys::get_known_host_key(&address){
             Ok(p) => p.unwrap(),
@@ -81,10 +84,7 @@ impl Session {
         hasher.update(public_key_pem.as_bytes());
         hasher.update(user.as_bytes());
 
-        let result = hasher.finalize();
-
-        let hex : String = result.iter().map(|b| format!("{:02x}",b)).collect();
-        Ok(hex)
+        Ok(hasher.finalize().to_vec())
     }
 }
 
